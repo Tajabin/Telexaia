@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telexaia</title>
+    <link rel="icon" type="image/png" href="Telexaia.png">
+    
+    <style>
+        body {
+            font-family: Lato, sans-serif;
+            font-size: small;
+            margin: 0;
+            padding: 0;
+            background-color: #101820;
+            color: #fff;
+            overflow: hidden;
+            position: relative;
+        }
+        #threejs-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 0 0 10px white, 0 0 20px white, 0 0 30px white;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Parallax scrolling effect */
+        .container {
+            text-align: center;
+            padding: 50px 20px;
+            z-index: 1;
+            position: relative;
+            border: 2px solid #00ffff; /* Teal border */
+            box-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff; /* Neon glow effect */
+            color: #00ffff; /* Teal text color */
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; /* Neon text shadow */
+            background: rgba(16, 24, 32, 0.8); /* Semi-transparent background */
+            backdrop-filter: blur(10px); /* Blur effect for background */
+            animation: neon-glow 1.5s infinite alternate; /* Neon glow animation */
+        }
+
+        @keyframes neon-glow {
+            from {
+                box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+            }
+            to {
+                box-shadow: 0 0 20px #00ffff, 0 0 30px #00ffff, 0 0 40px #00ffff;
+            }
+        }
+        #status, #command {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        #start-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background-color: #00ffff;
+            color: white;
+            border-radius: 5px;
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        #start-btn:hover {
+            box-shadow: 0 0 20px #00ffff;
+        }
+        .custom-cursor {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            pointer-events: none;
+            box-shadow: 0 0 10px white, 0 0 20px white, 0 0 30px white;
+            transition: transform 0.1s ease;
+            animation: rotate-cursor 1.5s infinite linear;
+        }
+    
+        @keyframes rotate-cursor {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        </style>
+        
+        
+    
+</head>
+<body>
+    <div id="threejs-container"></div>
+
+    <header>
+        <h1>Telexaia</h1>
+    </header>
+
+  
+    <div class="container">
+        <h2>Your Smart, Seamless Ally</h2>
+        <div id="status"></div>
+        <button id="start-btn">Start Listening</button>
+        <div id="command"></div>
+    </div>
+    <div class="custom-cursor" id="custom-cursor"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const container = document.getElementById('threejs-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        const particles = new THREE.BufferGeometry();
+        const particleCount = 1000;
+        const positions = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 2000;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+        }
+
+        particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 2,
+            transparent: true,
+            opacity: 0.75,
+        });
+
+        const particleSystem = new THREE.Points(particles, particleMaterial);
+        scene.add(particleSystem);
+
+        camera.position.z = 1000;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            particleSystem.rotation.y += 0.001;
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const startBtn = document.getElementById('start-btn');
+        const statusDiv = document.getElementById('status');
+        const commandDiv = document.getElementById('command');
+        const customCursor = document.getElementById('custom-cursor');
+
+        document.addEventListener('mousemove', (e) => {
+            customCursor.style.left = `${e.clientX}px`;
+            customCursor.style.top = `${e.clientY}px`;
+        });
+
+
+        startBtn.addEventListener('click', () => {
+            statusDiv.innerText = 'Listening...';
+            startVoiceRecognition();
+        });
+
+        function startVoiceRecognition() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            recognition.onresult = async function(event) {
+                const command = event.results[0][0].transcript;
+                commandDiv.innerText = `You said: ${command}`;
+
+                const response = await fetch('/process_command', {
+                    method: 'POST',
+                    body: new URLSearchParams({ 'command': command })
+                });
+                const data = await response.json();
+                commandDiv.innerText += `\nResponse: ${data.response}`;
+
+                if (data.response && data.response !== 'I am not sure how to help with that yet.') {
+                    await speakText(data.response);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                statusDiv.innerText = 'Error: ' + event.error;
+            };
+        }
+
+        async function speakText(text) {
+            await fetch('/speak', {
+                method: 'POST',
+                body: new URLSearchParams({ 'text': text })
+            });
+        }
+    </script>
+    <script>
+        const synth = window.speechSynthesis;
+    
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            synth.speak(utterance);
+        }
+    
+        async function recognizeSpeech() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+    
+            return new Promise((resolve) => {
+                recognition.start();
+                recognition.onresult = (event) => {
+                    const command = event.results[0][0].transcript;
+                    document.getElementById('command').innerText = `You said: ${command}`;
+                    resolve(command.toLowerCase());
+                };
+                recognition.onerror = () => resolve("");
+            });
+        }
+    
+        async function processCommand(command) {
+            if (command.includes("time")) {
+                const now = new Date().toLocaleTimeString();
+                speak(`The time is ${now}`);
+            } else if (command.includes("search")) {
+                speak("What should I search for?");
+                const query = await recognizeSpeech();
+                if (query) {
+                    window.open(`https://www.google.com/search?q=${query}`);
+                    speak(`Here are the search results for ${query}`);
+                }
+            } else if (command.includes("location") || command.includes("map")) {
+                speak("Please tell me the place or address.");
+                const location = await recognizeSpeech();
+                if (location) {
+                    window.open(`https://www.google.com/maps?q=${location}`);
+                    speak(`Here is the location of ${location} on Google Maps.`);
+                }
+            } else {
+                speak("I'm not sure how to help with that yet.");
+            }
+        }
+    
+        document.getElementById('start-btn').addEventListener('click', async () => {
+            speak("Hello! How can I assist you today?");
+            const command = await recognizeSpeech();
+            if (command.includes("stop")) {
+                speak("Goodbye!");
+            } else {
+                processCommand(command);
+            }
+        });
+    </script>
+    
+</body>
+</html>
